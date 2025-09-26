@@ -6,7 +6,11 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+const corsOptions = {
+  origin: ['http://localhost:3000', 'https://siwes-lms.vercel.app'],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // PostgreSQL connection pool
@@ -19,6 +23,77 @@ const pool = new Pool({
   password: process.env.DATABASE_URL ? undefined : process.env.DB_PASSWORD,
   port: process.env.DATABASE_URL ? undefined : process.env.DB_PORT,
 });
+
+// // Database schema creation for Library Management System
+// const createTables = async () => {
+//   try {
+//     console.log('🔄 Creating database tables...');
+
+//     // Users table
+//     await pool.query(`
+//       CREATE TABLE IF NOT EXISTS users (
+//         user_id SERIAL PRIMARY KEY,
+//         full_name VARCHAR(255) NOT NULL,
+//         email VARCHAR(255) UNIQUE NOT NULL,
+//         password VARCHAR(255) NOT NULL,
+//         role VARCHAR(50) DEFAULT 'student',
+//         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//       )
+//     `);
+
+//     // Books table
+//     await pool.query(`
+//       CREATE TABLE IF NOT EXISTS books (
+//         book_id SERIAL PRIMARY KEY,
+//         title VARCHAR(255) NOT NULL,
+//         author VARCHAR(255) NOT NULL,
+//         published_year INTEGER,
+//         isbn VARCHAR(20),
+//         copies_available INTEGER DEFAULT 1,
+//         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//       )
+//     `);
+
+//     // Borrow Records table
+//     await pool.query(`
+//       CREATE TABLE IF NOT EXISTS borrow_records (
+//         record_id SERIAL PRIMARY KEY,
+//         user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+//         book_id INTEGER REFERENCES books(book_id) ON DELETE CASCADE,
+//         borrow_date DATE DEFAULT CURRENT_DATE,
+//         due_date DATE NOT NULL,
+//         return_date DATE,
+//         status VARCHAR(20) DEFAULT 'borrowed',
+//         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//       )
+//     `);
+
+//     // Create indexes for better performance
+//     await pool.query(
+//       `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`
+//     );
+//     await pool.query(
+//       `CREATE INDEX IF NOT EXISTS idx_books_isbn ON books(isbn)`
+//     );
+//     await pool.query(
+//       `CREATE INDEX IF NOT EXISTS idx_borrow_records_user ON borrow_records(user_id)`
+//     );
+//     await pool.query(
+//       `CREATE INDEX IF NOT EXISTS idx_borrow_records_book ON borrow_records(book_id)`
+//     );
+//     await pool.query(
+//       `CREATE INDEX IF NOT EXISTS idx_borrow_records_status ON borrow_records(status)`
+//     );
+
+//     console.log('✅ Library Management System tables created successfully');
+//   } catch (err) {
+//     console.error('❌ Error creating tables:', err.message);
+//     throw err;
+//   }
+// };
+
+// // Call this function when server starts
+// createTables();
 
 const authenticate = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
