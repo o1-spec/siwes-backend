@@ -11,18 +11,20 @@ app.use(express.json());
 
 // PostgreSQL connection pool
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
+  connectionString: process.env.DATABASE_URL || undefined,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  user: process.env.DATABASE_URL ? undefined : process.env.DB_USER,
+  host: process.env.DATABASE_URL ? undefined : process.env.DB_HOST,
+  database: process.env.DATABASE_URL ? undefined : process.env.DB_NAME,
+  password: process.env.DATABASE_URL ? undefined : process.env.DB_PASSWORD,
+  port: process.env.DATABASE_URL ? undefined : process.env.DB_PORT,
 });
 
 const authenticate = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) return res.status(401).send('Access denied');
   try {
-    const decoded = jwt.verify(token, 'secret_key');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();
   } catch (err) {
@@ -336,7 +338,7 @@ app.post('/login', async (req, res) => {
     if (!isValid) return res.status(401).send('Invalid password');
     const token = jwt.sign(
       { id: user.user_id, role: user.role },
-      'secret_key',
+      process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
     res.json({ token });
