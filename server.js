@@ -449,6 +449,47 @@ app.post('/bulk-books', authenticate, async (req, res) => {
   }
 });
 
+app.get('/stats/previous', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT total_books AS totalBooks, total_users AS totalUsers, active_borrows AS activeBorrows, overdue_books AS overdueBooks
+      FROM stats_history
+      WHERE date = CURRENT_DATE - INTERVAL '1 day'
+      LIMIT 1
+    `);
+    if (result.rows.length === 0) {
+      return res.json({ totalBooks: 0, totalUsers: 0, activeBorrows: 0, overdueBooks: 0 });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error fetching previous stats');
+  }
+});
+
+app.post('/stats/insert-daily', authenticate, async (req, res) => {
+  try {
+    await pool.query(`
+      INSERT INTO stats_history (total_books, total_users, active_borrows, overdue_books)
+      VALUES (
+        (SELECT COUNT(*) FROM books),
+        (SELECT COUNT(*) FROM users),
+        (SELECT COUNT(*) FROM borrow_records WHERE return_date IS NULL),
+        (SELECT COUNT(*) FROM borrow_records br JOIN books b ON br.book_id = b.book_id WHERE br.return_date IS NULL AND br.due_date < CURRENT_DATE)
+      )
+      ON CONFLICT (date) DO UPDATE SET
+        total_books = EXCLUDED.total_books,
+        total_users = EXCLUDED.total_users,
+        active_borrows = EXCLUDED.active_borrows,
+        overdue_books = EXCLUDED.overdue_books
+    `);
+    res.json({ message: 'Daily stats inserted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error inserting stats');
+  }
+});
+
 // ===============================
 // START SERVER
 // ===============================
