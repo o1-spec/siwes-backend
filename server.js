@@ -276,9 +276,8 @@ app.delete('/books/:id', authenticate, async (req, res) => {
 app.get('/borrow_records', authenticate, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT br.record_id, u.full_name, b.title, br.borrow_date, br.due_date, br.return_date, br.status
+      SELECT br.record_id, br.user_name, b.title, br.borrow_date, br.due_date, br.return_date, br.status
       FROM borrow_records br
-      JOIN users u ON br.user_id = u.user_id
       JOIN books b ON br.book_id = b.book_id
       ORDER BY br.record_id ASC
     `);
@@ -290,11 +289,11 @@ app.get('/borrow_records', authenticate, async (req, res) => {
 });
 
 app.post('/borrow_records', authenticate, async (req, res) => {
-  const { user_id, book_id, due_date } = req.body;
+  const { user_name, book_id, due_date } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO borrow_records (user_id, book_id, due_date) VALUES ($1, $2, $3) RETURNING *',
-      [user_id, book_id, due_date]
+      'INSERT INTO borrow_records (user_name, book_id, due_date) VALUES ($1, $2, $3) RETURNING *',
+      [user_name, book_id, due_date]
     );
     res.json(result.rows[0]);
   } catch (err) {
@@ -436,7 +435,13 @@ app.post('/bulk-books', authenticate, async (req, res) => {
     for (const book of books) {
       await pool.query(
         'INSERT INTO books (title, author, published_year, isbn, copies_available) VALUES ($1, $2, $3, $4, $5)',
-        [book.title, book.author, book.published_year, book.isbn, book.copies_available]
+        [
+          book.title,
+          book.author,
+          book.published_year,
+          book.isbn,
+          book.copies_available,
+        ]
       );
     }
     res.json({ message: 'Books added successfully' });
