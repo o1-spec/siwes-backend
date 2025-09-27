@@ -423,6 +423,10 @@ app.post('/login', async (req, res) => {
   }
 });
 
+app.post('/logout', authenticate, (req, res) => {
+  res.json({ message: 'Logged out successfully' });
+});
+
 // ===============================
 // START SERVER
 // ===============================
