@@ -350,10 +350,9 @@ app.get('/reports/most-borrowed', authenticate, async (req, res) => {
 app.get('/reports/active-users', authenticate, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT u.full_name, COUNT(br.record_id) AS borrow_count
+      SELECT br.user_name, COUNT(br.record_id) AS borrow_count
       FROM borrow_records br
-      JOIN users u ON br.user_id = u.user_id
-      GROUP BY u.user_id, u.full_name
+      GROUP BY br.user_name
       ORDER BY borrow_count DESC
       LIMIT 10
     `);
@@ -367,11 +366,10 @@ app.get('/reports/active-users', authenticate, async (req, res) => {
 app.get('/reports/overdue', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT u.full_name, b.title, br.due_date,
-             (CURRENT_DATE - br.due_date) AS overdue_days,  -- Direct calculation
-             ((CURRENT_DATE - br.due_date) * 1) AS fine     -- $1 per day
+      SELECT br.user_name, b.title, br.due_date,
+             (CURRENT_DATE - br.due_date) AS overdue_days,
+             ((CURRENT_DATE - br.due_date) * 1) AS fine
       FROM borrow_records br
-      JOIN users u ON br.user_id = u.user_id
       JOIN books b ON br.book_id = b.book_id
       WHERE br.return_date IS NULL AND br.due_date < CURRENT_DATE
     `);
