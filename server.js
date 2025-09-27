@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const app = express();
 const corsOptions = {
-  origin: ['http://localhost:3000', 'https://siwes-lms.vercel.app'],
+  origin: ['http://localhost:5173', 'https://siwes-lms.vercel.app'],
   credentials: true,
 };
 app.use(cors(corsOptions));
