@@ -427,6 +427,25 @@ app.post('/logout', authenticate, (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
+app.post('/bulk-books', authenticate, async (req, res) => {
+  const books = req.body.books;
+  if (!Array.isArray(books)) {
+    return res.status(400).send('Books must be an array');
+  }
+  try {
+    for (const book of books) {
+      await pool.query(
+        'INSERT INTO books (title, author, published_year, isbn, copies_available) VALUES ($1, $2, $3, $4, $5)',
+        [book.title, book.author, book.published_year, book.isbn, book.copies_available]
+      );
+    }
+    res.json({ message: 'Books added successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error adding books');
+  }
+});
+
 // ===============================
 // START SERVER
 // ===============================
